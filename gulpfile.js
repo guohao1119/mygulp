@@ -181,9 +181,86 @@ const style = () => {
     // sass转换后默认情况下结束的大括号}是放在样式最后一个属性的后面
     // 如果想要放在单独一行，在sass传入参数对象{outputStyle: 'expanded'}
     .pipe(sass({outputStyle: 'expanded'})) // 会将.scss转换会.css
-    .pipe(dest('dist')) 
+    .pipe(dest('dist'))
 }
 
+// js的处理
+// 转换js需要使用到gulp-babel
+// 1 安装 npm i gulp-babel --save-dev
+// 2 引入 const babel = require('gulp-babel')
+// 3 放入pipe中执行
+// 直接这样执行会报错，因为gulp-babel并不会转换js，而是调用babel
+// 4 安装@babel/core @babel/preset-env
+// 5 配置babel
+
+const babel = require('gulp-babel')
+
+const script = () => {
+  return src('src/assets/scripts/*.js', { base: 'src' })
+    .pipe(babel({presets: ['@babel/preset-env']}))
+    .pipe(dest('dist'))
+}
+
+// html的处理
+// html模板引擎有多种，不同的模板引擎使用不同的插件转换
+
+const page = () => {
+  return src('src/*.html', { base: 'src' })
+    // .pipe() // 配置html转换插件
+    .pipe(dest('dist'))
+}
+
+// 图片和字体文件的处理
+// 需要用到gulp-imagemin
+// 1 安装 npm i --save-dev gulp-imagemin
+// 2 引入
+
+const imagemin = require('gulp-imagemin')
+
+const image = () => {
+  return src('src/assets/images/**', {base: 'src'})
+    .pipe(imagemin())
+    .pipe(dest('dist'))
+}
+// 字体文件
+const font = () => {
+  return src('src/assets/fonts/**', {base: 'src'})
+    .pipe(imagemin())
+    .pipe(dest('dist'))
+}
+
+// 其他文件
+// 其他不需要转换的文件，直接copy一份到dist目录中
+const extra = () => {
+  return src('src/public/**', {base: 'public'})
+    .pipe(dest('dist'))
+}
+
+// 清除文件
+// 使用del
+// 1 安装npm i --save-dev del
+// 2 引入 const del = require('del')
+// 3 调用
+const del = require('del')
+
+const clean = () => {
+  return del('dist')
+}
+
+// 多任务处理
+// html、css、js的处理互不干扰，所以可以使用parallel同时处理
+const compile = parallel(style, script, page, image, font)
+
+// 1 将需要转义的和不需要的区分开
+// 2 使用series控制先删除，再编译
+const build = series(clean, parallel(compile, extra))
+
 module.exports = {
-  style
+  style,
+  script,
+  page,
+  image,
+  font,
+  compile,
+  build
 }
